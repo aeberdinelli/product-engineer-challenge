@@ -1,0 +1,26 @@
+{
+	"name": "psychiatrist-scheduler-api",
+	"author": "Alan Berdinelli",
+	"version": "1.0.0",
+	"license": "UNLICENSED",
+	"private": true,
+	"scripts": {
+		"build": "tsc",
+		"clean": "rm -rf dist",
+		"watch": "tsc -w"
+	},
+	"devDependencies": {
+		"@types/aws-lambda": "^8.10.122",
+		"@types/luxon": "^3.7.1",
+		"@types/node": "^24.2.0",
+		"@types/uuid": "^10.0.0",
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.600.0",
+		"@aws-sdk/util-dynamodb": "^3.600.0",
+		"luxon": "^3.7.1",
+		"schemy-ts": "^1.6.2",
+		"uuid": "^11.1.0"
+	}
+}

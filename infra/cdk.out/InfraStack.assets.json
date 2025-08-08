@@ -1,0 +1,104 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "f5ad3feeb52d13a486293a04448d332e816ce13005b1b541a05dd6cbb65e7692": {
+      "displayName": "ListPsychiatristsLambda/Code",
+      "source": {
+        "path": "asset.f5ad3feeb52d13a486293a04448d332e816ce13005b1b541a05dd6cbb65e7692",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-e37edf8d": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "f5ad3feeb52d13a486293a04448d332e816ce13005b1b541a05dd6cbb65e7692.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "4e4a45916ece108af895ae41d84f5df2f91b523d16743560a1a6e19d467620ac": {
+      "displayName": "CreatePsychiatristLambda/Code",
+      "source": {
+        "path": "asset.4e4a45916ece108af895ae41d84f5df2f91b523d16743560a1a6e19d467620ac",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-4f96a86a": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "4e4a45916ece108af895ae41d84f5df2f91b523d16743560a1a6e19d467620ac.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "7616fe38ce7c8f0a1fb299d6cf31a1b316a0695b3e6325d82053ce4214b44090": {
+      "displayName": "AvailabilityLambda/Code",
+      "source": {
+        "path": "asset.7616fe38ce7c8f0a1fb299d6cf31a1b316a0695b3e6325d82053ce4214b44090",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-7c94d802": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "7616fe38ce7c8f0a1fb299d6cf31a1b316a0695b3e6325d82053ce4214b44090.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "f39333f50646887846419075601e01920e17b4f430c4d67a79f7d4e1031d7bc9": {
+      "displayName": "CreateAppointmentLambda/Code",
+      "source": {
+        "path": "asset.f39333f50646887846419075601e01920e17b4f430c4d67a79f7d4e1031d7bc9",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-d3c35e54": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "f39333f50646887846419075601e01920e17b4f430c4d67a79f7d4e1031d7bc9.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "a842facfabef8e4b108aa4c438f79eb3e7a941f1abcf9c0fbee07be16c670ba6": {
+      "displayName": "ApproveAppointmentLambda/Code",
+      "source": {
+        "path": "asset.a842facfabef8e4b108aa4c438f79eb3e7a941f1abcf9c0fbee07be16c670ba6",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-bd06303e": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "a842facfabef8e4b108aa4c438f79eb3e7a941f1abcf9c0fbee07be16c670ba6.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "c2187963e8cec156c1416c53c54de1c518fa3749ba95225e7359e205426d1c0e": {
+      "displayName": "RejectAppointmentLambda/Code",
+      "source": {
+        "path": "asset.c2187963e8cec156c1416c53c54de1c518fa3749ba95225e7359e205426d1c0e",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-d28f2ee4": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "c2187963e8cec156c1416c53c54de1c518fa3749ba95225e7359e205426d1c0e.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "0e6687e1e4dc4bea77cfff0293c386cf195d26831bff0d53bddb2b49acd6a96e": {
+      "displayName": "InfraStack Template",
+      "source": {
+        "path": "InfraStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-0a47d81d": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "0e6687e1e4dc4bea77cfff0293c386cf195d26831bff0d53bddb2b49acd6a96e.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
