@@ -3,7 +3,8 @@ import { DateTime } from 'luxon';
 import {
   Box, Chip, Divider, FormControl, InputLabel, MenuItem, Paper, Select, Grid,
   Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Button, Typography,
-  Container
+  Container,
+  CircularProgress
 } from '@mui/material';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -19,6 +20,7 @@ const weekDays = (mondayISO: string) => {
 
 export function PsychiatristsPage() {
   const [rows, setRows] = useState<Psychiatrist[]>([]);
+  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [specialty, setSpecialty] = useState('');
   const [type, setType] = useState<TypeFilter>('');
@@ -44,6 +46,14 @@ export function PsychiatristsPage() {
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  useEffect(() => {
+    if (!booking.ok && !booking.error) {
+      return;
+    }
+    const t = setTimeout(() => setBooking({}), 3500);
+    return () => clearTimeout(t);
+  }, [booking.ok, booking.error]);
 
   const handleFilter = async () => { await load(); };
 
@@ -71,20 +81,36 @@ export function PsychiatristsPage() {
     setWeekly(results);
   };
 
-  const requestBooking = async (slot: Slot) => {
+  const requestBooking = async (slot: Slot, dayIso: string) => {
     if (!selected || !slot.startUtc || !slot.appointmentType) {
       setBooking({ error: 'Missing required info to book this slot' });
       return;
     }
+
+    setBookingSlotId(slot.startUtc);
+    setBooking({});
+    setLoading(true);
+
     try {
       const res = await createAppointment({
         psychiatristId: selected.id,
         appointmentType: slot.appointmentType,
         startUtc: slot.startUtc
       });
+
+      // Remove the just-booked slot from that day list
+      setWeekly(prev => {
+        const daySlots = prev[dayIso] || [];
+        const filtered = daySlots.filter(s => s.startUtc !== slot.startUtc);
+        return { ...prev, [dayIso]: filtered };
+      });
+
       setBooking({ ok: `Requested! Appointment ID: ${res.id}` });
     } catch (e: any) {
       setBooking({ error: e?.message || 'Failed to request appointment' });
+    } finally {
+      setBookingSlotId(null);
+      setLoading(false);
     }
   };
 
@@ -165,7 +191,11 @@ export function PsychiatristsPage() {
                 </TableRow>
               ))}
               {rows.length === 0 && !loading && (
-                <TableRow><TableCell colSpan={4}><Typography>No psychiatrists found.</Typography></TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <Typography>No psychiatrists found.</Typography>
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
@@ -186,7 +216,7 @@ export function PsychiatristsPage() {
                   <TableRow>
                     {dayCols.map((d) => (
                       <TableCell key={d} sx={{ whiteSpace: 'nowrap' }}>
-                        <b>{DateTime.fromISO(d).toFormat('ccc dd')}</b>
+                        <strong>{DateTime.fromISO(d).toFormat('ccc dd')}</strong>
                       </TableCell>
                     ))}
                   </TableRow>
@@ -205,7 +235,7 @@ export function PsychiatristsPage() {
                           {(weekly[d] || []).map((slot, idx) => (
                             <Box
                               key={idx}
-                              onClick={() => requestBooking(slot)}
+                              onClick={() => requestBooking(slot, d)}
                               sx={{
                                 border: '1px solid',
                                 borderColor: slot.appointmentType === 'ONLINE' ? 'primary.main' : 'secondary.main',
@@ -231,6 +261,20 @@ export function PsychiatristsPage() {
                                 <Typography variant="body2">
                                   {slot.displayStart}–{slot.displayEnd}
                                 </Typography>
+
+                                {loading && (
+                                  <Box
+                                    sx={{
+                                      position: 'absolute',
+                                      inset: 0,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    <CircularProgress size={22} />
+                                  </Box>
+                                )}
                               </Stack>
                             </Box>
                           ))}
