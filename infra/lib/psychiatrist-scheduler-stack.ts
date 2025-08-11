@@ -82,7 +82,16 @@ export class PsychiatristSchedulerStack extends cdk.Stack {
 			environment: { TABLE_NAME: table.tableName }
 		});
 
+		// List appointments
+		const listAppointmentsLambda = new NodejsFunction(this, 'ListAppointmentsLambda', {
+			entry: path.join(__dirname, '../../api/listAppointments.ts'),
+			handler: 'handler',
+			runtime: lambda.Runtime.NODEJS_20_X,
+			environment: { TABLE_NAME: table.tableName }
+		});
+
 		// Grant permissions
+		table.grantReadData(listAppointmentsLambda);
 		table.grantReadWriteData(approveAppointmentLambda);
 		table.grantReadWriteData(rejectAppointmentLambda);
 		table.grantReadData(listPsychiatristsLambda);
@@ -91,7 +100,20 @@ export class PsychiatristSchedulerStack extends cdk.Stack {
 		table.grantReadWriteData(createAppointmentLambda);
 		
 		// API Gateway HTTP API
-		const httpApi = new HttpApi(this, 'HttpApi', { apiName: 'PsychiatristSchedulerApi' });
+		const httpApi = new HttpApi(this, 'HttpApi', { 
+			apiName: 'PsychiatristSchedulerApi',
+			corsPreflight: {
+				allowOrigins: ['*'],
+				allowHeaders: ['*'],
+				allowMethods: [
+					cdk.aws_apigatewayv2.CorsHttpMethod.GET,
+					cdk.aws_apigatewayv2.CorsHttpMethod.POST,
+					cdk.aws_apigatewayv2.CorsHttpMethod.PATCH,
+					cdk.aws_apigatewayv2.CorsHttpMethod.OPTIONS
+				],
+				maxAge: cdk.Duration.days(10)
+			}
+		});
 		
 		// Routes
 		httpApi.addRoutes({
@@ -123,6 +145,11 @@ export class PsychiatristSchedulerStack extends cdk.Stack {
 			path: '/appointments/{id}/reject',
 			methods: [HttpMethod.PATCH],
 			integration: new HttpLambdaIntegration('RejectAppointmentIntegration', rejectAppointmentLambda)
+		});
+		httpApi.addRoutes({
+			path: '/appointments',
+			methods: [HttpMethod.GET],
+			integration: new HttpLambdaIntegration('ListAppointmentsIntegration', listAppointmentsLambda)
 		});
 		
 		new cdk.CfnOutput(this, 'ApiEndpoint', {

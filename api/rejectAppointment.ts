@@ -1,39 +1,25 @@
-import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { APIGatewayProxyHandler } from 'aws-lambda';
+import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 
-const client = new DynamoDBClient({});
+const ddb = new DynamoDBClient({});
 
 export const handler: APIGatewayProxyHandler = async (event) => {
 	try {
-		const appointmentId = event.pathParameters?.id;
-		if (!appointmentId) {
+		const id = event.pathParameters?.id;
+
+		if (!id) {
 			return { 
-                statusCode: 400, 
-                body: JSON.stringify({ error: 'Missing appointment id' }) 
-            };
+				statusCode: 400, 
+				body: JSON.stringify({ error: 'Missing appointment id' }) 
+			};
 		}
 
-		if (!event.body) {
-			return { 
-                statusCode: 400, 
-                body: JSON.stringify({ error: 'Missing body' }) 
-            };
-		}
-
-		const { psychiatristId } = JSON.parse(event.body);
-		if (!psychiatristId) {
-			return { 
-                statusCode: 400, 
-                body: JSON.stringify({ error: 'Missing psychiatristId' }) 
-            };
-		}
-
-		await client.send(
+		await ddb.send(
 			new UpdateItemCommand({
 				TableName: process.env.TABLE_NAME,
 				Key: {
-					PK: { S: `APPOINTMENT#${appointmentId}` },
-					SK: { S: `PSYCHIATRIST#${psychiatristId}` }
+					PK: { S: `APPOINTMENT#${id}` },
+					SK: { S: 'PROFILE' }
 				},
 				UpdateExpression: 'SET #s = :rejected',
 				ConditionExpression: '#s = :pending',
@@ -46,15 +32,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		);
 
 		return { 
-            statusCode: 200, 
-            body: JSON.stringify({ appointmentId, status: 'REJECTED' }) 
-        };
-	} catch (error) {
-		console.error(error);
-        
+			statusCode: 200, 
+			body: JSON.stringify({ id, status: 'REJECTED' }) 
+		};
+	} catch (err) {
+		console.error(err);
+		
 		return { 
-            statusCode: 400, 
-            body: JSON.stringify({ error: 'Failed to reject appointment' }) 
-        };
+			statusCode: 400, 
+			body: JSON.stringify({ error: 'Failed to reject appointment' }) 
+		};
 	}
 };

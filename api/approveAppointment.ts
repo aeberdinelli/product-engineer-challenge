@@ -1,58 +1,44 @@
-import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { APIGatewayProxyHandler } from 'aws-lambda';
+import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 
-const client = new DynamoDBClient({});
+const ddb = new DynamoDBClient({});
 
 export const handler: APIGatewayProxyHandler = async (event) => {
 	try {
-		const appointmentId = event.pathParameters?.id;
-		if (!appointmentId) {
+		const id = event.pathParameters?.id;
+
+		if (!id) {
 			return { 
                 statusCode: 400, 
                 body: JSON.stringify({ error: 'Missing appointment id' }) 
             };
 		}
 
-		if (!event.body) {
-			return { 
-                statusCode: 400, 
-                body: JSON.stringify({ error: 'Missing body' }) 
-            };
-		}
-
-		const { psychiatristId } = JSON.parse(event.body);
-        
-		if (!psychiatristId) {
-			return { 
-                statusCode: 400, 
-                body: JSON.stringify({ error: 'Missing psychiatristId' }) 
-            };
-		}
-
-		await client.send(
-			new UpdateItemCommand({
-				TableName: process.env.TABLE_NAME,
-				Key: {
-					PK: { S: `APPOINTMENT#${appointmentId}` },
-					SK: { S: `PSYCHIATRIST#${psychiatristId}` }
-				},
-				UpdateExpression: 'SET #s = :approved',
-				ConditionExpression: '#s = :pending',
-				ExpressionAttributeNames: { '#s': 'status' },
-				ExpressionAttributeValues: {
-					':pending': { S: 'PENDING' },
-					':approved': { S: 'APPROVED' }
-				}
-			})
-		);
+		await ddb.send(
+            new UpdateItemCommand({
+                TableName: process.env.TABLE_NAME,
+                Key: {
+                    PK: { S: `APPOINTMENT#${id}` },
+                    SK: { S: 'PROFILE' }
+                },
+                // prevent double approve
+                UpdateExpression: 'SET #s = :approved',
+                ConditionExpression: '#s = :pending',
+                ExpressionAttributeNames: { '#s': 'status' },
+                ExpressionAttributeValues: {
+                    ':pending': { S: 'PENDING' },
+                    ':approved': { S: 'APPROVED' }
+                }
+            })
+        );
 
 		return { 
             statusCode: 200, 
-            body: JSON.stringify({ appointmentId, status: 'APPROVED' }) 
+            body: JSON.stringify({ id, status: 'APPROVED' }) 
         };
-	} catch (error) {
-		console.error(error);
-
+	} catch (err) {
+		console.error(err);
+		
 		return { 
             statusCode: 400, 
             body: JSON.stringify({ error: 'Failed to approve appointment' }) 
