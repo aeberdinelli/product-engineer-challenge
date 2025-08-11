@@ -54,10 +54,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		
 		if (appointmentType && appointmentType.trim().length > 0) {
 			psychiatrists = psychiatrists.filter((psychiatrist) => {
-				return (
-					Array.isArray(psychiatrist.servicesOffered) &&
-					psychiatrist.servicesOffered.includes(appointmentType)
-				);
+				if (appointmentType === 'ONLINE') {
+					return psychiatrist.schedule.online && psychiatrist.schedule.online.length > 0;
+				}
+
+				if (appointmentType === 'IN_PERSON') {
+					return psychiatrist.schedule.inPerson && psychiatrist.schedule.inPerson.length > 0;
+				}
+				
+				return false;
 			});
 		}
 		

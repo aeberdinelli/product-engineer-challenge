@@ -139,7 +139,6 @@ export function PsychiatristsPage() {
                 <MenuItem value=""><em>(Any)</em></MenuItem>
                 <MenuItem value="ONLINE">Online</MenuItem>
                 <MenuItem value="IN_PERSON">In person</MenuItem>
-                <MenuItem value="ALL">Both / All</MenuItem>
               </Select>
             </FormControl>
             <TextField
