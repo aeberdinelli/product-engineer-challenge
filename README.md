@@ -2,19 +2,19 @@
 
 A tiny, cheap-to-run MVP where users can find psychiatrists, view weekly availability (online / in-person), and request appointments. Admins can approve/reject requests.
 
-## Quickstart (Frontend – local)
+## Quickstart
 
-### Requirements
-- **Node 20 LTS** (recommended)  
+### 📋 Requirements
+- **Node 20 LTS**  
 
-### Configure API base URL
+### 🔧 Configure API base URL
 Create `web/.env`:
 ```env
 VITE_API_BASE=https://<your-api-endpoint>
 ```
 > This is the CDK output `ApiEndpoint` (no trailing slash).
 
-### Install & run
+### ▶️ Install & run
 ```bash
 cd web
 npm install
@@ -22,11 +22,9 @@ npm run dev
 ```
 Open http://localhost:5173
 
----
+## Deploy (AWS)
 
-## Deploy (Infra + API on AWS)
-
-### Requirements
+### 📋 Requirements
 - AWS account with permissions to deploy
 - **AWS CLI** configured:
   ```bash
@@ -37,14 +35,14 @@ Open http://localhost:5173
   npm i -g aws-cdk
   ```
 
-### 1) Bootstrap the environment (first time per account/region)
+### 🚀 Bootstrap the environment (first time per account/region)
 ```bash
 cd infra
 npm install
 cdk bootstrap
 ```
 
-### 2) Deploy
+### 🚢 Deploy
 ```bash
 cd infra
 cdk deploy
@@ -54,9 +52,7 @@ After deploy:
 - Copy the `ApiEndpoint` from the CDK outputs into `web/.env` as `VITE_API_BASE`.
 - If your browser shows CORS issues, we already enable permissive CORS in the stack. Redeploy if you changed it.
 
----
-
-## Project Structure
+## 📂 Project Structure
 
 ```
 psychiatrist-scheduler/
@@ -81,9 +77,7 @@ psychiatrist-scheduler/
 │   └── package.json
 ```
 
----
-
-## Tech Used
+## 🛠 Tech Used
 
 - **Frontend**
   - [React](https://react.dev/) + [Vite](https://vitejs.dev/) + TypeScript
