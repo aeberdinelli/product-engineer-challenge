@@ -123,10 +123,17 @@ export function AdminPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {rows.length === 0 && (
+              {rows.length === 0 && !loading && (
                 <TableRow>
                   <TableCell colSpan={7}>
                     <Typography>No appointments.</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    <Typography>Loading...</Typography>
                   </TableCell>
                 </TableRow>
               )}

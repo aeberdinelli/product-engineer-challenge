@@ -224,6 +224,10 @@ export function PsychiatristsPage() {
                   sx={{
                     '& .MuiTableCell-root': {
                       borderBottom: 'none'
+                    },
+                    '& .MuiTableCell-root:hover': {
+                      backgroundColor: '#f9f9f9',
+                      opacity: 0.9
                     }
                   }}
                 >
@@ -237,8 +241,10 @@ export function PsychiatristsPage() {
                               onClick={() => requestBooking(slot, d)}
                               sx={{
                                 border: '1px solid',
-                                borderColor: slot.appointmentType === 'ONLINE' ? 'primary.main' : 'secondary.main',
-                                borderRadius: 1.5,
+                                borderColor: slot.appointmentType === 'ONLINE' 
+                                  ? 'primary.main' 
+                                  : 'secondary.main',
+                                borderRadius: 1,
                                 p: 1,
                                 cursor: 'pointer',
                                 minWidth: 80,
@@ -250,21 +256,9 @@ export function PsychiatristsPage() {
                               }}
                             >
                               <Stack alignItems="center" spacing={0.5}>
-                                {slot.appointmentType === 'ONLINE'
-                                  ? <VideocamIcon fontSize="small" color="primary" />
-                                  : <HomeWorkIcon fontSize="small" color="secondary" />
-                                }
-                                <Typography variant="caption" fontWeight={600}>
-                                  {slot.appointmentType === 'ONLINE' ? 'Online' : 'In person'}
-                                </Typography>
-                                <Typography variant="body2">
-                                  {slot.displayStart}–{slot.displayEnd}
-                                </Typography>
-
-                                {loading && (
+                                {loading && _bookingSlotId === slot.startUtc ? (
                                   <Box
                                     sx={{
-                                      position: 'absolute',
                                       inset: 0,
                                       display: 'flex',
                                       alignItems: 'center',
@@ -273,6 +267,21 @@ export function PsychiatristsPage() {
                                   >
                                     <CircularProgress size={22} />
                                   </Box>
+                                ) : (
+                                  <>
+                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                      {slot.appointmentType === 'ONLINE'
+                                        ? <VideocamIcon fontSize="small" color="primary" />
+                                        : <HomeWorkIcon fontSize="small" color="secondary" />
+                                      }
+                                      {/* <Typography variant="caption" fontWeight={600}>
+                                        {slot.appointmentType === 'ONLINE' ? 'Online' : 'In person'}
+                                      </Typography> */}
+                                    </Stack>
+                                    <Typography variant="body2">
+                                      {slot.displayStart}-{slot.displayEnd}
+                                    </Typography>
+                                  </>
                                 )}
                               </Stack>
                             </Box>
