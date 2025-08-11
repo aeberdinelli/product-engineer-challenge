@@ -1,11 +1,11 @@
-// api/timeUtils.ts
 import { DateTime } from 'luxon';
 
 export type Slot = { 
-    startUtc: string; 
-    endUtc: string; 
-    displayStart?: string; 
-    displayEnd?: string 
+	startUtc: string; 
+	endUtc: string; 
+	displayStart?: string; 
+	displayEnd?: string;
+	appointmentType?: 'ONLINE' | 'IN_PERSON';
 };
 
 export const toUtcIso = (date: string, timeHHmm: string, zone: string): string => {

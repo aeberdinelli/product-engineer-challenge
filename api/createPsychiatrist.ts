@@ -25,6 +25,15 @@ const ScheduleSchema = {
 	}
 };
 
+const AllScheduleSchema = new Schemy({
+	online: {
+		type: [ScheduleSchema],
+	},
+	inPerson: {
+		type: [ScheduleSchema]
+	},
+});
+
 const PsychiatristSchema = new Schemy({
 	name: {
 		type: String,
@@ -40,7 +49,7 @@ const PsychiatristSchema = new Schemy({
 		max: 100
 	},
 	schedule: {
-		type: [ScheduleSchema],
+		type: AllScheduleSchema.schema,
 		required: true,
 	},
 	specialty: {

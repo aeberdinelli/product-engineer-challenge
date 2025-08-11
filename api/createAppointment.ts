@@ -14,6 +14,11 @@ const CreateAppointmentSchema = new Schemy({
 		type: String,
 		required: true
 	},
+	appointmentType: {
+		type: String,
+		enum: ['ONLINE', 'IN_PERSON'],
+		required: true
+	},
 	startUtc: {
 		type: String,
 		required: true
@@ -41,7 +46,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 			};
 		}
 
-		const { psychiatristId, startUtc } = body;
+		const { psychiatristId, appointmentType, startUtc } = body;
 
 		// Validate psychiatrist exists and get profile
 		const profileResponse = await client.send(
@@ -69,14 +74,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		const endLocal = startLocal.plus({ minutes: APPOINTMENT_MINUTES });
 		const dateLocalStr = startLocal.toISODate();
 
-		// Prevent double booking
+		// Prevent double booking — match on both date + psychiatrist + type
 		const bookedResponse = await client.send(
 			new QueryCommand({
 				TableName: process.env.TABLE_NAME,
 				IndexName: 'GSI2',
 				KeyConditionExpression: 'GSI2PK = :date AND GSI2SK = :psychiatristSlot',
 				ExpressionAttributeValues: {
-					':date': { S: `DATE#${dateLocalStr}` },
+					':date': { S: `DATE#${dateLocalStr}#${appointmentType}` },
 					':psychiatristSlot': { S: `PSYCHIATRIST#${psychiatristId}#${startLocal.toFormat('HH:mm')}` }
 				}
 			})
@@ -100,9 +105,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 					SK: 'PROFILE',
 					GSI1PK: `PSYCHIATRIST#${psychiatristId}`,
 					GSI1SK: `DATE#${dateLocalStr}`,
-					GSI2PK: `DATE#${dateLocalStr}`,
+					GSI2PK: `DATE#${dateLocalStr}#${appointmentType}`,
 					GSI2SK: `PSYCHIATRIST#${psychiatristId}#${startLocal.toFormat('HH:mm')}`,
 					psychiatristId,
+					appointmentType,
 					startTime: startLocal.toFormat('HH:mm'),
 					endTime: endLocal.toFormat('HH:mm'),
 					date: dateLocalStr,
@@ -123,6 +129,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 			body: JSON.stringify({
 				id: appointmentId,
 				status: 'PENDING',
+				appointmentType,
 				slot
 			})
 		};

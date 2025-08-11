@@ -22,6 +22,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 	try {
 		const psychiatristId = event.pathParameters?.id;
 		const date = event.queryStringParameters?.date; // YYYY-MM-DD
+		const rawType = event.queryStringParameters?.type?.toUpperCase();
+		const requestedType = rawType === 'ONLINE' || rawType === 'IN_PERSON' ? rawType : 'ALL';
 
 		if (!psychiatristId || !date) {
 			return {
@@ -30,7 +32,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 			};
 		}
 
-		// Get psychiatrist profile
+		// Load psychiatrist profile
 		const profileResponse = await client.send(
 			new GetItemCommand({
 				TableName: process.env.TABLE_NAME,
@@ -52,89 +54,147 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		const psychiatristTimezone = profile.timezone || 'UTC';
 		const weekday = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
 
-		// Get schedule blocks for that weekday
-		const scheduleBlocks: Interval[] = (profile.schedule || [])
-			.filter((scheduleItem: any) => scheduleItem.day === weekday)
-			.map((scheduleItem: any) => ({
-				start: hhmmToMinutes(scheduleItem.startTime),
-				end: hhmmToMinutes(scheduleItem.endTime)
-			}));
+		// Choose which schedule buckets to use
+		const typeToKey: Record<'ONLINE' | 'IN_PERSON', 'online' | 'inPerson'> = {
+			ONLINE: 'online',
+			IN_PERSON: 'inPerson'
+		};
 
-		if (scheduleBlocks.length === 0) {
+		const typesToProcess: Array<'ONLINE' | 'IN_PERSON'> =
+			requestedType === 'ALL' ? ['ONLINE', 'IN_PERSON'] : [requestedType];
+
+		// Build schedule blocks per type for the given weekday
+		const scheduleByType: Record<'ONLINE' | 'IN_PERSON', Interval[]> = {
+			ONLINE: [],
+			IN_PERSON: []
+		};
+
+		for (const type of typesToProcess) {
+			const key = typeToKey[type];
+			const schedules = Array.isArray(profile.schedule?.[key]) ? profile.schedule[key] : [];
+
+			const blocks: Interval[] = schedules
+				.filter((scheduleItem: any) => scheduleItem.day === weekday)
+				.map((scheduleItem: any) => {
+					return {
+						start: hhmmToMinutes(scheduleItem.startTime),
+						end: hhmmToMinutes(scheduleItem.endTime)
+					};
+				});
+
+			scheduleByType[type] = blocks;
+		}
+
+		// Early out: no working hours for the requested type(s)
+		if (
+			scheduleByType.ONLINE.length === 0 &&
+			scheduleByType.IN_PERSON.length === 0
+		) {
 			return {
 				statusCode: 200,
 				body: JSON.stringify([])
 			};
 		}
 
-		// Get booked appointments for that date
-		const bookedResponse = await client.send(
-			new QueryCommand({
-				TableName: process.env.TABLE_NAME,
-				IndexName: 'GSI2',
-				KeyConditionExpression: 'GSI2PK = :date AND begins_with(GSI2SK, :psychiatrist)',
-				ExpressionAttributeValues: {
-					':date': { S: `DATE#${date}` },
-					':psychiatrist': { S: `PSYCHIATRIST#${psychiatristId}` }
-				}
-			})
-		);
+		// Fetch booked appointments PER TYPE using new GSI2PK = DATE#<date>#<TYPE>
+		const bookedByType: Record<'ONLINE' | 'IN_PERSON', Interval[]> = {
+			ONLINE: [],
+			IN_PERSON: []
+		};
 
-		const bookedIntervals: Interval[] = (bookedResponse.Items || []).map((item) => {
-			const data = unmarshall(item);
-			return {
-				start: hhmmToMinutes(data.startTime),
-				end: hhmmToMinutes(data.endTime)
-			};
-		});
-
-		// Subtract booked intervals from open schedule blocks
-		let freeIntervals: Interval[] = scheduleBlocks;
-
-		for (const bookedInterval of bookedIntervals) {
-			const updatedFreeIntervals: Interval[] = [];
-
-			for (const openInterval of freeIntervals) {
-				const isCompletelyBefore = bookedInterval.end <= openInterval.start;
-				const isCompletelyAfter = bookedInterval.start >= openInterval.end;
-
-				if (isCompletelyBefore || isCompletelyAfter) {
-					updatedFreeIntervals.push(openInterval);
-					continue;
-				}
-
-				if (bookedInterval.start > openInterval.start) {
-					updatedFreeIntervals.push({
-						start: openInterval.start,
-						end: Math.min(bookedInterval.start, openInterval.end)
-					});
-				}
-
-				if (bookedInterval.end < openInterval.end) {
-					updatedFreeIntervals.push({
-						start: Math.max(bookedInterval.end, openInterval.start),
-						end: openInterval.end
-					});
-				}
+		for (const type of typesToProcess) {
+			// If there are no blocks for this type today, skip the query
+			if (scheduleByType[type].length === 0) {
+				continue;
 			}
 
-			freeIntervals = updatedFreeIntervals;
+			const bookedResponse = await client.send(
+				new QueryCommand({
+					TableName: process.env.TABLE_NAME,
+					IndexName: 'GSI2',
+					KeyConditionExpression:
+						'GSI2PK = :pk AND begins_with(GSI2SK, :psychiatristPrefix)',
+					ExpressionAttributeValues: {
+						':pk': { S: `DATE#${date}#${type}` },
+						':psychiatristPrefix': { S: `PSYCHIATRIST#${psychiatristId}` }
+					}
+				})
+			);
+
+			const intervals: Interval[] = (bookedResponse.Items || []).map((raw) => {
+				const item = unmarshall(raw) as any;
+				return {
+					start: hhmmToMinutes(item.startTime),
+					// pad with REST so next slot starts at the next cycle boundary
+					end: hhmmToMinutes(item.endTime) + REST_MINUTES
+				};
+			});
+
+			bookedByType[type] = intervals;
 		}
 
-		// Generate available slots
+		// For each type, subtract booked intervals from working blocks, then generate slots
 		const slots: Slot[] = [];
 
-		for (const { start, end } of freeIntervals) {
-			for (let currentMinute = start; currentMinute + CYCLE_MINUTES <= end; currentMinute += CYCLE_MINUTES) {
-				const slotStartLocal = DateTime.fromISO(date, { zone: psychiatristTimezone }).plus({ minutes: currentMinute });
-				const slotEndLocal = slotStartLocal.plus({ minutes: APPOINTMENT_MINUTES });
+		for (const type of typesToProcess) {
+			const blocks = scheduleByType[type];
 
-				slots.push({
-					startUtc: slotStartLocal.toUTC().toISO() ?? '',
-					endUtc: slotEndLocal.toUTC().toISO() ?? '',
-					displayStart: slotStartLocal.toFormat('HH:mm'),
-					displayEnd: slotEndLocal.toFormat('HH:mm')
-				});
+			if (blocks.length === 0) {
+				continue;
+			}
+
+			let freeIntervals: Interval[] = blocks;
+
+			for (const booked of bookedByType[type]) {
+				const updated: Interval[] = [];
+
+				for (const open of freeIntervals) {
+					const isBefore = booked.end <= open.start;
+					const isAfter = booked.start >= open.end;
+
+					if (isBefore || isAfter) {
+						updated.push(open);
+						continue;
+					}
+
+					if (booked.start > open.start) {
+						updated.push({
+							start: open.start,
+							end: Math.min(booked.start, open.end)
+						});
+					}
+
+					if (booked.end < open.end) {
+						updated.push({
+							start: Math.max(booked.end, open.start),
+							end: open.end
+						});
+					}
+				}
+
+				freeIntervals = updated;
+			}
+
+			// Generate cycle-aligned slots
+			for (const { start, end } of freeIntervals) {
+				for (
+					let currentMinute = start;
+					currentMinute + CYCLE_MINUTES <= end;
+					currentMinute += CYCLE_MINUTES
+				) {
+					const slotStartLocal = DateTime.fromISO(date, { zone: psychiatristTimezone }).plus({
+						minutes: currentMinute
+					});
+					const slotEndLocal = slotStartLocal.plus({ minutes: APPOINTMENT_MINUTES });
+
+					slots.push({
+						startUtc: slotStartLocal.toUTC().toISO() ?? '',
+						endUtc: slotEndLocal.toUTC().toISO() ?? '',
+						displayStart: slotStartLocal.toFormat('HH:mm'),
+						displayEnd: slotEndLocal.toFormat('HH:mm'),
+						appointmentType: type
+					});
+				}
 			}
 		}
 
@@ -144,7 +204,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 		};
 	} catch (error) {
 		console.error(error);
-
 		return {
 			statusCode: 500,
 			body: JSON.stringify({ error: 'Failed to get availability' })
