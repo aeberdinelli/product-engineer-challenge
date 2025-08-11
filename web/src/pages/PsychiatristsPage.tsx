@@ -20,7 +20,7 @@ const weekDays = (mondayISO: string) => {
 
 export function PsychiatristsPage() {
   const [rows, setRows] = useState<Psychiatrist[]>([]);
-  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
+  const [_bookingSlotId, setBookingSlotId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [specialty, setSpecialty] = useState('');
   const [type, setType] = useState<TypeFilter>('');
