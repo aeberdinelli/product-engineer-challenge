@@ -2,10 +2,11 @@
 
 A tiny, cheap-to-run MVP where users can find psychiatrists, view weekly availability (online / in-person), and request appointments. Admins can approve/reject requests.
 
-## Quickstart
+## Quickstart frontend
 
 ### 📋 Requirements
-- **Node 20 LTS**  
+- **Node 20 LTS**
+- **AWS CLI**
 
 ### 🔧 Configure API base URL
 Create `web/.env`:
@@ -22,7 +23,7 @@ npm run dev
 ```
 Open http://localhost:5173
 
-## Deploy (AWS)
+## Deploy backend (AWS)
 
 ### 📋 Requirements
 - AWS account with permissions to deploy
