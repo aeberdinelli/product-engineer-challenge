@@ -85,7 +85,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 			scheduleByType[type] = blocks;
 		}
 
-		// Early out: no working hours for the requested type(s)
+		// No working hours for the requested type
 		if (
 			scheduleByType.ONLINE.length === 0 &&
 			scheduleByType.IN_PERSON.length === 0
@@ -96,14 +96,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 			};
 		}
 
-		// Fetch booked appointments PER TYPE using new GSI2PK = DATE#<date>#<TYPE>
+		// Fetch booked appointments
 		const bookedByType: Record<'ONLINE' | 'IN_PERSON', Interval[]> = {
 			ONLINE: [],
 			IN_PERSON: []
 		};
 
 		for (const type of typesToProcess) {
-			// If there are no blocks for this type today, skip the query
 			if (scheduleByType[type].length === 0) {
 				continue;
 			}
@@ -121,19 +120,24 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 				})
 			);
 
-			const intervals: Interval[] = (bookedResponse.Items || []).map((raw) => {
-				const item = unmarshall(raw) as any;
-				return {
-					start: hhmmToMinutes(item.startTime),
-					// pad with REST so next slot starts at the next cycle boundary
-					end: hhmmToMinutes(item.endTime) + REST_MINUTES
-				};
-			});
+			const intervals: Interval[] = (bookedResponse.Items || [])
+				.map((raw) => unmarshall(raw) as any)
+				// Only subtract if status is PENDING or APPROVED
+				.filter((item) => {
+					const status = String(item.status || '').toUpperCase();
+					return status === 'PENDING' || status === 'APPROVED';
+				})
+				.map((item) => {
+					return {
+						start: hhmmToMinutes(item.startTime),
+						end: hhmmToMinutes(item.endTime) + REST_MINUTES
+					};
+				});
 
 			bookedByType[type] = intervals;
 		}
 
-		// For each type, subtract booked intervals from working blocks, then generate slots
+		// Subtract booked intervals from working blocks
 		const slots: Slot[] = [];
 
 		for (const type of typesToProcess) {
